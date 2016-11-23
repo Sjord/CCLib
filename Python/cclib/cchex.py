@@ -115,7 +115,7 @@ class CCHEXFile:
 
 		# Guess format if not specified
 		if ftype == None:
-			if self.filename[-4:].lower() == ".hex":
+			if self.filename[-4:].lower() in (".hex", ".ihx"):
 				ftype = "hex"
 			elif self.filename[-4:].lower() == ".bin":
 				ftype = "bin"
