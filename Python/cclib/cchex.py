@@ -1,5 +1,5 @@
 #
-# CCLib_proxy Interface Library for High-Level operations
+# cchex module to read Intel HEX files
 # Copyright (c) 2014 Ioannis Charalampidis
 #
 # This program is free software: you can redistribute it and/or modify

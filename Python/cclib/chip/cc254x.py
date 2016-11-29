@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
 import sys
 import time
 from cclib.chip import ChipDriver
@@ -532,7 +533,7 @@ class CC254X(ChipDriver):
 
 			# Check if we should show progress
 			if showProgress:
-				print "\r    Progress %0.0f%%... " % (iOfs*100/len(data)),
+				print("\r    Progress %0.0f%%... " % (iOfs*100/len(data)), end=' ')
 				sys.stdout.flush()
 
 			# Get next page
@@ -606,7 +607,7 @@ class CC254X(ChipDriver):
 				for i in range(0, iLen):
 					if verifyBytes[i] != data[iOfs+i]:
 						if flashRetries < 3:
-							print "\n[Flash Error at @0x%04x, will retry]" % (fAddr+i)
+							print("\n[Flash Error at @0x%04x, will retry]" % (fAddr+i))
 							flashRetries += 1
 							continue
 						else:
@@ -617,4 +618,4 @@ class CC254X(ChipDriver):
 			iOfs += iLen
 
 		if showProgress:
-			print "\r    Progress 100%... OK"
+			print("\r    Progress 100%... OK")

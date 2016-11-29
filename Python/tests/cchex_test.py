@@ -24,9 +24,16 @@ from binascii import unhexlify
 
 def temp_hexfile(contents):
     hexfile = NamedTemporaryFile(suffix='.hex')
-    hexfile.write(contents)
+    hexfile.write(contents.encode("ASCII"))
     hexfile.seek(0)
     return hexfile
+
+
+def temp_binfile(contents):
+    binfile = NamedTemporaryFile(suffix='.bin')
+    binfile.write(contents)
+    binfile.seek(0)
+    return binfile
 
 
 class TestCCHEXFile(TestCase):
@@ -54,6 +61,16 @@ class TestCCHEXFile(TestCase):
 
             assert len(cchex.memBlocks) == 2
             assert cchex.memBlocks[0].addr == 0x0100
-            assert cchex.memBlocks[0].bytes == "\x7F" * 16
+            assert cchex.memBlocks[0].bytes == b"\x7F" * 16
             assert cchex.memBlocks[1].addr == 0x0500
-            assert cchex.memBlocks[1].bytes == "\x3D" * 16
+            assert cchex.memBlocks[1].bytes == b"\x3D" * 16
+
+    def test_load_bin_creates_correct_memblock(self):
+        data = b"\x00hello\x80world\xff"
+        with temp_binfile(data) as binfile:
+            cchex = CCHEXFile()
+            cchex.load(binfile.name)
+
+            assert len(cchex.memBlocks) == 1
+            assert cchex.memBlocks[0].addr == 0
+            assert cchex.memBlocks[0].bytes == data

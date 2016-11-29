@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
 import sys
 import time
 from cclib.chip import ChipDriver
@@ -250,7 +251,7 @@ class CC2510(ChipDriver):
 	
 	def readFlashPage(self, address):
 		if (not self.debug_active):
-			print "ERROR: not in debug mode! did you forget a enter() call?\n"
+			print("ERROR: not in debug mode! did you forget a enter() call?\n")
 			sys.exit(2)
 		return self.readCODE(address & 0x7FFFF, self.flashPageSize)
 	
@@ -259,7 +260,7 @@ class CC2510(ChipDriver):
 			raise IOError("input data size != flash page size!")
 		
 		if (not self.debug_active):
-			print "ERROR: not in debug mode! did you forget a enter() call?\n"
+			print("ERROR: not in debug mode! did you forget a enter() call?\n")
 			sys.exit(2)
 
 		#calc words per flash page
@@ -268,7 +269,7 @@ class CC2510(ChipDriver):
 		#print "words_per_flash_page = %d" % (words_per_flash_page)
 		#print "flashWordSize = %d" % (self.flashWordSize)
 		if (erase_page): 
-			print "[page erased]",
+			print("[page erased]", end=' ')
 			
 		routine8_1 = [
 			#see http://www.ti.com/lit/ug/swra124/swra124.pdf page 11
@@ -325,14 +326,14 @@ class CC2510(ChipDriver):
 		self.halt()
 		
 		#send data to xdata memory:
-		if (self.show_debug_info): print "copying data to xdata"
+		if (self.show_debug_info): print("copying data to xdata")
 		self.writeXDATA(0xF000, inputArray)
 		
 		#send program to xdata mem
-		if (self.show_debug_info): print "copying flash routine to xdata"
+		if (self.show_debug_info): print("copying flash routine to xdata")
 		self.writeXDATA(0xF000 + self.flashPageSize, routine)
 	
-		if (self.show_debug_info): print "executing code"
+		if (self.show_debug_info): print("executing code")
 		#execute MOV MEMCTR, (bank * 16) + 1; 
 		self.instr(0x75, 0xC7, 0x51)
 		
@@ -343,18 +344,18 @@ class CC2510(ChipDriver):
 		self.resume()
 		
 		
-		if (self.show_debug_info): print "page write running",
+		if (self.show_debug_info): print("page write running", end=' ')
 		
 		#set some timeout (2 seconds)
 		timeout = 200
 		while (timeout > 0):
 			#show progress
 			if (self.show_debug_info): 
-				print ".",
+				print(".", end=' ')
 				sys.stdout.flush()
 			#check status (bit 0x20 = cpu halted)
 			if ((self.getStatus() & 0x20 ) != 0):
-				if (self.show_debug_info): print "done"
+				if (self.show_debug_info): print("done")
 				break
 			#timeout increment
 			timeout -= 1
@@ -367,7 +368,7 @@ class CC2510(ChipDriver):
 		
 		self.halt()
 		
-		if (self.show_debug_info): print "done"
+		if (self.show_debug_info): print("done")
 
 
 	###############################################
@@ -469,7 +470,7 @@ class CC2510(ChipDriver):
 
 			# Check if we should show progress
 			if showProgress:
-				print "\r    Progress %0.0f%%... " % (iOfs*100/len(data)),
+				print("\r    Progress %0.0f%%... " % (iOfs*100/len(data)), end=' ')
 				sys.stdout.flush()
 
 			# Get next page
@@ -543,7 +544,7 @@ class CC2510(ChipDriver):
 				for i in range(0, iLen):
 					if verifyBytes[i] != data[iOfs+i]:
 						if flashRetries < 3:
-							print "\n[Flash Error at @0x%04x, will retry]" % (fAddr+i)
+							print("\n[Flash Error at @0x%04x, will retry]" % (fAddr+i))
 							flashRetries += 1
 							continue
 						else:
@@ -554,4 +555,4 @@ class CC2510(ChipDriver):
 			iOfs += iLen
 
 		if showProgress:
-			print "\r    Progress 100%... OK"
+			print("\r    Progress 100%... OK")
