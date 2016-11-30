@@ -72,11 +72,12 @@ if maxMem > (dbg.chipInfo['flash'] * 1024):
 erasePrompt = "OVERWRITE"
 if opts['erase']:
 	erasePrompt = "ERASE and REPROGRAM"
-print "This is going to %s the chip. Are you sure? <y/N>: " % erasePrompt, 
-ans = sys.stdin.readline()[0:-1]
-if (ans != "y") and (ans != "Y"):
-	print "Aborted"
-	sys.exit(2)
+if False:
+    print "This is going to %s the chip. Are you sure? <y/N>: " % erasePrompt, 
+    ans = sys.stdin.readline()[0:-1]
+    if (ans != "y") and (ans != "Y"):
+        print "Aborted"
+        sys.exit(2)
 
 
 # Flashing messages
@@ -93,17 +94,22 @@ if opts['erase']:
 
 # Flash memory
 dbg.pauseDMA(False)
-print " - Flashing %i memory blocks..." % len(hexFile.memBlocks)
-for mb in hexFile.memBlocks:
+if False:
+	dbg.writeCODE(2052, bytearray([0x88] * 512), verify=True, erase=True)
 
-	# Flash memory block
-	print " -> 0x%04x : %i bytes " % (mb.addr + offset, mb.size)
-	try:
-		dbg.writeCODE( mb.addr + offset, mb.bytes, verify=True, showProgress=True )
-	except Exception as e:
-		print "ERROR: %s" % str(e)
-		sys.exit(3)
+if False:
+	a = dbg.readXDATA(0, 2048)
+	from binascii import hexlify
+	print hexlify(a)
 
-# Done
-print "\nCompleted"
-print ""
+if True:
+    print " - Flashing %i memory blocks..." % len(hexFile.memBlocks)
+    for mb in hexFile.memBlocks:
+
+        # Flash memory block
+        print " -> 0x%04x : %i bytes " % (mb.addr + offset, mb.size)
+        dbg.writeCODE( mb.addr + offset, mb.bytes, verify=True, showProgress=True )
+
+    # Done
+    print "\nCompleted"
+    print ""

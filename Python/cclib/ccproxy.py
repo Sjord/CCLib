@@ -271,7 +271,7 @@ class CCLibProxy:
 		# Validate length
 		length = len(data)
 		if length > 2048:
-			return False
+			return False # TODO raise error
 
 		# Split length in high/low order bytes
 		cHigh = (length >> 8) & 0xFF

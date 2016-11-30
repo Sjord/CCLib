@@ -176,6 +176,8 @@ class CCHEXFile:
 		Append bytes on the last memory block
 		"""
 
+		chr(bytes[0] & 0xFF)
+
 		# Check if we have no memory blocks
 		if len(self.memBlocks) == 0:
 			self.memBlocks.append(CCMemBlock(0x0000))
@@ -224,7 +226,7 @@ class CCHEXFile:
 		with open(self.filename, "rb") as f:
 
 			# Read entire file
-			mb.bytes = f.read()
+			mb.bytes = bytearray(f.read())
 			mb.size = len(mb.bytes)
 
 		# Store memory block

@@ -21,6 +21,7 @@
 import sys
 import time
 from cclib.chip import ChipDriver
+from binascii import hexlify
 
 
 # From the SWRU191F user guide, section 3.6, CHIPID register
@@ -31,6 +32,9 @@ chipIDs = {
     0x8D: 'CC2540',
     0x41: 'CC2541',
 }
+
+
+FADDR = 0x6271
 
 
 def getChipName(chipID):
@@ -141,6 +145,10 @@ class CC254X(ChipDriver):
 	def readCODE( self, offset, size ):
 		"""
 		Read any size of buffer from the XDATA+0x8000 (code-mapped) region
+
+		The upper 32 KB of the XDATA memory space (0x8000-0xFFFF) is a read-only flash
+		code bank (XBANK) and can be mapped to any of the available flash banks using
+		the MEMCTR.XBANK[2:0] bits.
 		"""
 
 		# Pick the code bank this code chunk belongs to
@@ -447,7 +455,7 @@ class CC254X(ChipDriver):
 		cLow = (address & 0xFF)
 
 		# Place in FADDRH:FADDRL
-		self.writeXDATA( 0x6271, [cLow, cHigh])
+		self.writeXDATA( FADDR, [cLow, cHigh])
 
 	def isFlashFull(self):
 		"""
@@ -494,7 +502,7 @@ class CC254X(ChipDriver):
 		# Set flash WRITE bit
 		a = self.readXDATA(0x6270, 1)
 		a[0] |= 0x02
-		return self.writeXDATA(0x6270, a)
+		self.writeXDATA(0x6270, a)
 
 	def setFlashErase(self):
 		"""
@@ -540,6 +548,8 @@ class CC254X(ChipDriver):
 
 			# Update DMA configuration if we have less than bulk-block size data 
 			if (iLen < self.bulkBlockSize):
+				# note that the block size, LEN in configuration data, must be divisible by 4; otherwise, the last word is not written to the flash
+				# assert iLen % 4 == 0
 				self.configDMAChannel( 0, 0x6260, 0x0000, 0x1F, tlen=iLen, srcInc=0, dstInc=1, priority=1, interrupt=True )
 				self.configDMAChannel( 1, 0x0000, 0x6273, 0x12, tlen=iLen, srcInc=1, dstInc=0, priority=2, interrupt=True )
 
@@ -553,17 +563,11 @@ class CC254X(ChipDriver):
 
 			# Clear DMA IRQ flag
 			self.clearDMAIRQ(0)
+			# import pdb; pdb.set_trace()
 
 			# Calculate the page where this data belong to
 			fAddr = offset + iOfs
 			fPage = int( fAddr / self.flashPageSize )
-
-			# Calculate FLASH address High/Low bytes
-			# for writing (addressable as 32-bit words)
-			fWordOffset = int(fAddr / 4)
-			cHigh = (fWordOffset >> 8) & 0xFF
-			cLow = fWordOffset & 0xFF
-			self.writeXDATA( 0x6271, [cLow, cHigh] )
 
 			# Debug
 			#print "[@%04x: p=%i, ofs=%04x, %02x:%02x]" % (fAddr, fPage, fWordOffset, cHigh, cLow),
@@ -578,12 +582,22 @@ class CC254X(ChipDriver):
 				#
 				cHigh = (fPage << 1)
 				cLow = 0
-				self.writeXDATA( 0x6271, [cLow, cHigh] )
+				self.writeXDATA( FADDR, [cLow, cHigh] )
 				# Set the erase bit
 				self.setFlashErase()
 				# Wait until flash is not busy any more
 				while self.isFlashBusy():
 					time.sleep(0.010)
+
+			# Calculate FLASH address High/Low bytes
+			# for writing (addressable as 32-bit words)
+			# fWordOffset = int(fAddr / 4)
+			fWordOffset = fAddr >> 2
+			cHigh = (fWordOffset >> 8) & 0xFF
+			cLow = fWordOffset & 0xFF
+			# This will be overwritten by erase below
+			print cHigh, cLow
+			self.writeXDATA( FADDR, [cLow, cHigh] )
 
 			# Upload to FLASH through DMA-1
 			self.armDMAChannel(1)
@@ -603,6 +617,7 @@ class CC254X(ChipDriver):
 			# Check if we should verify
 			if verify:
 				verifyBytes = self.readCODE(fAddr, iLen)
+				print hexlify(data[iOfs:iOfs+iLen]), hexlify(verifyBytes)
 				for i in range(0, iLen):
 					if verifyBytes[i] != data[iOfs+i]:
 						if flashRetries < 3:
